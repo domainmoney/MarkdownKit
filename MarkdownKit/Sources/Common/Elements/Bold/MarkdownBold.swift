@@ -19,7 +19,7 @@ open class MarkdownBold: MarkdownCommonElement {
   }
   
   public init(font: MarkdownFont? = nil, color: MarkdownColor? = nil) {
-    self.font = font
+    self.font = font?.bold()
     self.color = color
   }
 
@@ -31,7 +31,7 @@ open class MarkdownBold: MarkdownCommonElement {
     attributedString.enumerateAttribute(.font, in: match.range(at: 3)) { value, range, _ in
       guard let currentFont = value as? MarkdownFont else { return }
       if let customFont = self.font {
-          attributes[.font] = currentFont.isItalic() ? customFont.bold().italic() : customFont.bold()
+          attributes[.font] = currentFont.isItalic() ? customFont.italic() : customFont
       } else {
         attributedString.addAttribute(
           NSAttributedString.Key.font,
