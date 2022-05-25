@@ -47,15 +47,22 @@ open class MarkdownLink: MarkdownLinkElement {
 
   open func match(_ match: NSTextCheckingResult, attributedString: NSMutableAttributedString) {
     // Remove opening bracket
-    attributedString.deleteCharacters(in: NSRange(location: match.range(at: 1).location, length: 1))
+    attributedString.deleteCharactersIfValid(in: NSRange(location: match.range(at: 1).location, length: 1))
 
     // Remove closing bracket
-    attributedString.deleteCharacters(in: NSRange(location: match.range(at: 2).location - 1, length: 1))
+    attributedString.deleteCharactersIfValid(in: NSRange(location: match.range(at: 2).location - 1, length: 1))
 
     let urlStart = match.range(at: 2).location
+    let urlEnd = match.range(at: 2).upperBound - 2
 
     let string = NSString(string: attributedString.string)
-    var urlString = String(string.substring(with: NSRange(urlStart..<match.range(at: 2).upperBound - 2 )))
+
+    // Avoid further formatting, if range is not valid
+    guard urlStart <= urlEnd else {
+        return
+    }
+
+    var urlString = String(string.substring(with: NSRange(urlStart..<urlEnd)))
 
     // Balance opening and closing parantheses inside the url
     var numberOfOpeningParantheses = 0
@@ -73,11 +80,11 @@ open class MarkdownLink: MarkdownLinkElement {
     }
 
     // Remove opening parantheses
-    attributedString.deleteCharacters(in: NSRange(location: match.range(at: 2).location, length: 1))
+    attributedString.deleteCharactersIfValid(in: NSRange(location: match.range(at: 2).location, length: 1))
 
     // Remove closing parantheses
     let trailingMarkdownRange = NSRange(location: match.range(at: 2).location - 1, length: urlString.count + 1)
-    attributedString.deleteCharacters(in: trailingMarkdownRange)
+    attributedString.deleteCharactersIfValid(in: trailingMarkdownRange)
 
     let formatRange = NSRange(match.range(at: 1).location..<match.range(at: 2).location - 1)
 
@@ -104,4 +111,18 @@ open class MarkdownLink: MarkdownLinkElement {
   open func addAttributes(_ attributedString: NSMutableAttributedString, range: NSRange) {
     attributedString.addAttributes(attributes, range: range)
   }
+}
+
+// MARK: - Helper
+
+extension NSMutableAttributedString {
+    func deleteCharactersIfValid(in range: NSRange) {
+        let fullRange = NSMakeRange(0, self.length)
+        let underlineRange = NSIntersectionRange(range, fullRange)
+
+        // Only delete charater if range is valid
+        if underlineRange.length != 0 {
+            deleteCharacters(in: range)
+        }
+    }
 }
